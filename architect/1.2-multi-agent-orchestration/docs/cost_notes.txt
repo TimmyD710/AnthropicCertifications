@@ -1,0 +1,5 @@
+Cost notes: TestPilot licensing at Northwind Labs (fictional).
+The TestPilot licence costs 38 euros per developer per month, with a minimum of 20 seats.
+Northwind Labs bought 60 seats, for a total of 27,360 euros per year.
+Finance estimated that the saved testing hours were worth about 112,000 euros in the first year.
+Payback was reached after roughly four months.

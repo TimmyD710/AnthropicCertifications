@@ -14,13 +14,14 @@ Build a coordinator that delegates to a web-search subagent (fake canned search 
 ## Steps
 - [x] 1. Setup check - done when: tiny test call reply appears in run.log
 - [ ] 2. One subagent with explicit brief - done when: it answers using only facts in the brief
-- [ ] 3. Prove no inherited context - done when: subagent doesn't know an unshared fact, then does once it is in the brief
-- [ ] 4. Two subagents, sequential - done when: combined report + measured time
-- [ ] 5. Parallel delegation - done when: two tool calls in one response, time clearly lower
-- [ ] 6. Iterative refinement - done when: planted gap gets filled by targeted re-delegation
-- [ ] 7. Reproduce the bug - done when: report is incomplete though all subagents succeed
-- [ ] 8. Fix at the coordinator - done when: all areas covered without touching subagents
-- [ ] 9. Wrap-up - check questions + knowledge.md update
+- [x] 3. Prove no inherited context - done when: subagent doesn't know an unshared fact, then does once it is in the brief
+- [ ] 4. Build the two subagents (fake search + document), test each alone - done when: each answers from its own source
+- [ ] 5. Run both sequentially from plain code, synthesise, time it - done when: combined report + measured time
+- [ ] 6. Coordinator with delegate tool, parallel delegation - done when: two tool calls in one response, time clearly lower
+- [ ] 7. Iterative refinement - done when: planted gap gets filled by targeted re-delegation
+- [ ] 8. Reproduce the bug - done when: report is incomplete though all subagents succeed
+- [ ] 9. Fix at the coordinator - done when: all areas covered without touching subagents
+- [ ] 10. Wrap-up - check questions + knowledge.md update
 
 ## Notes
 - Working alias: `code` (gateway models are Qwen/Gemma/GPT-OSS-style, no Claude seen; real models unknown, ask admin).

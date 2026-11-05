@@ -1,0 +1,5 @@
+Pilot report: AI-assisted testing at Northwind Labs (fictional).
+In 2025, Northwind Labs ran a six-month pilot of an AI test generation tool called TestPilot on 14 internal web applications.
+TestPilot raised automated test coverage from 52 percent to 81 percent across the pilot applications.
+The average time to write a regression test fell from 45 minutes to 12 minutes.
+About 9 percent of generated tests were flaky and had to be rewritten by hand.
