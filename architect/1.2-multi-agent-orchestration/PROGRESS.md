@@ -16,12 +16,14 @@ Build a coordinator that delegates to a web-search subagent (fake canned search 
 - [ ] 2. One subagent with explicit brief - done when: it answers using only facts in the brief
 - [x] 3. Prove no inherited context - done when: subagent doesn't know an unshared fact, then does once it is in the brief
 - [x] 4. Build the two subagents (fake search + document), test each alone - done when: each answers from its own source
-- [ ] 5. Run both sequentially from plain code, synthesise, time it - done when: combined report + measured time
-- [ ] 6. Coordinator with delegate tool, parallel delegation - done when: two tool calls in one response, time clearly lower
-- [ ] 7. Iterative refinement - done when: planted gap gets filled by targeted re-delegation
-- [ ] 8. Reproduce the bug - done when: report is incomplete though all subagents succeed
-- [ ] 9. Fix at the coordinator - done when: all areas covered without touching subagents
-- [ ] 10. Wrap-up - check questions + knowledge.md update
+- [x] 5. Run both sequentially from plain code, synthesise, time it - done when: combined report + measured time (baseline: ~0.45 s search, ~0.14 s doc, ~0.12 s synthesis, total ~0.71 s; runs are noisy)
+- [ ] 6. Coordinator with `delegate` tool emits delegations (inspect only, no execution) - done when: log shows tool_use blocks per response
+- [ ] 7. Execute delegations + agentic loop, sequential, timed - done when: coordinator writes final report
+- [ ] 8. Parallel execution with threads, timed over several runs - done when: clearly faster than step 7
+- [ ] 9. Iterative refinement - done when: planted gap (costs doc) gets filled by targeted re-delegation
+- [ ] 10. Reproduce the bug - done when: report is incomplete though all subagents succeed
+- [ ] 11. Fix at the coordinator - done when: all areas covered without touching subagents
+- [ ] 12. Wrap-up - check questions + knowledge.md update
 
 ## Notes
 - Working alias: `code` (gateway models are Qwen/Gemma/GPT-OSS-style, no Claude seen; real models unknown, ask admin).

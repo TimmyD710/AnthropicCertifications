@@ -3,7 +3,7 @@ import time
 client = anthropic.Anthropic()
 
 def search_stub(query):
-    facts = {"ai testing tools":"AI testing tools are created to evaluate performance, quality and speed. These tools are included in benchmark testing.", "gardening hoe":"Exists to yeet that shit. Some people yeet it further than others. Not to be mixed up with the term 'hoe' often used as an insult to women.", "security risks":"Risks to a system or software or physical structures such as buildings", "risk of bad breath":"E.g. if you dont brush your teeth you have the risk of having bad breath."}
+    facts = {"tools":"AI testing tools generate test cases automatically from code or requirements. Many tools also repair broken tests after the user interface changes. Popular categories include test generation assistants, visual testing tools and self-healing test frameworks.", "risks":"AI-generated tests can look convincing while checking the wrong behaviour. Generated tests are sometimes flaky and need review by a person. Sending source code to external AI services can create data protection and confidentiality concerns."}
     found = []
     for key in facts:
         if key in query.lower():
