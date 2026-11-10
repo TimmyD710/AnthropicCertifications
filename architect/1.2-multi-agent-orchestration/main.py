@@ -14,12 +14,15 @@ def search_stub(query):
 
 def search_subagent(query):
     search_results = search_stub(query)
-    return run_subagent(f"Your task is to summarise the results below into 3 bullet points; use only the text below; if the results say 'No results found', say so. \n{search_results}")
+    return run_subagent(f"Your task is to summarise the results below into bullet points; use only the text below; if the results say 'No results found', say so. \n{search_results}")
 
 def document_subagent(question, path):
     with open(path, encoding="utf-8") as f:
         text = f.read()
     return run_subagent(f"Answer this: {question}. Answer using only the following document; if the answer is missing, say so: \n {text}")
+
+def summary_subagent(answer1, answer2):
+    return run_subagent(f"Summarize {answer1} and {answer2}")
 
 def run_subagent(brief):
     response = client.messages.create(
@@ -32,7 +35,9 @@ def run_subagent(brief):
     return response.content[0].text
 
 t0 = time.perf_counter()
-print(search_subagent("AI testing tools and risks"))
-print(f"search_subagent took {time.perf_counter() -t0:.001f} seconds")
-print(document_subagent("What results did the pilot achieve?", "docs/testing_report.txt"))
-print(f"document_subagent took {time.perf_counter() -t0:.001f} seconds")
+search_result = search_subagent("AI testing tools and risks")
+print(f"search_subagent took {time.perf_counter() -t0:.3f} seconds")
+document_result = document_subagent("What results did the pilot achieve?", "docs/testing_report.txt")
+print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
+print(summary_subagent(search_result, document_result))
+print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
