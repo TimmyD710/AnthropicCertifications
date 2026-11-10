@@ -15,7 +15,7 @@ Build a coordinator that delegates to a web-search subagent (fake canned search 
 - [x] 1. Setup check - done when: tiny test call reply appears in run.log
 - [ ] 2. One subagent with explicit brief - done when: it answers using only facts in the brief
 - [x] 3. Prove no inherited context - done when: subagent doesn't know an unshared fact, then does once it is in the brief
-- [ ] 4. Build the two subagents (fake search + document), test each alone - done when: each answers from its own source
+- [x] 4. Build the two subagents (fake search + document), test each alone - done when: each answers from its own source
 - [ ] 5. Run both sequentially from plain code, synthesise, time it - done when: combined report + measured time
 - [ ] 6. Coordinator with delegate tool, parallel delegation - done when: two tool calls in one response, time clearly lower
 - [ ] 7. Iterative refinement - done when: planted gap gets filled by targeted re-delegation

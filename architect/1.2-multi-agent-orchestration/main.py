@@ -1,7 +1,25 @@
 import anthropic
+import time
 client = anthropic.Anthropic()
 
+def search_stub(query):
+    facts = {"ai testing tools":"AI testing tools are created to evaluate performance, quality and speed. These tools are included in benchmark testing.", "gardening hoe":"Exists to yeet that shit. Some people yeet it further than others. Not to be mixed up with the term 'hoe' often used as an insult to women.", "security risks":"Risks to a system or software or physical structures such as buildings", "risk of bad breath":"E.g. if you dont brush your teeth you have the risk of having bad breath."}
+    found = []
+    for key in facts:
+        if key in query.lower():
+            found.append(facts[key])
+    if not found:
+        return "No results found"
+    return " ".join(found)
 
+def search_subagent(query):
+    search_results = search_stub(query)
+    return run_subagent(f"Your task is to summarise the results below into 3 bullet points; use only the text below; if the results say 'No results found', say so. \n{search_results}")
+
+def document_subagent(question, path):
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    return run_subagent(f"Answer this: {question}. Answer using only the following document; if the answer is missing, say so: \n {text}")
 
 def run_subagent(brief):
     response = client.messages.create(
@@ -13,8 +31,8 @@ def run_subagent(brief):
         return f"Response content is empty. Stop reason {response.stop_reason}"
     return response.content[0].text
 
-brief = "The company Tinininy was founded in 2018 and currently has 123 employees. How old will Tinininy be in 2030? And how many people will work there? When will project 'Olaha' be started by Tinininy? Answer in brief sentences, one per question asked"
-
-print("Without secret:", run_subagent(brief))
-print("With secret:", run_subagent(f"Project Olaha will commence in 2029. {brief}"))
-
+t0 = time.perf_counter()
+print(search_subagent("AI testing tools and risks"))
+print(f"search_subagent took {time.perf_counter() -t0:.001f} seconds")
+print(document_subagent("What results did the pilot achieve?", "docs/testing_report.txt"))
+print(f"document_subagent took {time.perf_counter() -t0:.001f} seconds")
