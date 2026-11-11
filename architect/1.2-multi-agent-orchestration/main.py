@@ -95,7 +95,7 @@ def run_agent(question):
         return ("Limit of iterations reached. Please try a differnt prompt.")
     return result.content[0].text
 
-print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
+# print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
 
 JOBS = [
     {'agent': 'search', 'task': 'How is AI changing software testing? What AI-powered testing tools exist (e.g., test generation, self-healing tests, AI test automation platforms) and what do they do?'},
@@ -113,8 +113,8 @@ def benchmark():
         list(pool.map(run_delegation, JOBS))
     print(f"Thread took {time.perf_counter() -t1:.3f} seconds")
 
-# benchmark()
-# benchmark()
+benchmark()
+benchmark()
 
 # t0 = time.perf_counter()
 # search_result = search_subagent("AI testing tools and risks")
