@@ -1,6 +1,8 @@
 import anthropic
 import time
 import os
+from concurrent.futures import ThreadPoolExecutor
+
 client = anthropic.Anthropic()
 MAX_ITERATIONS = 20
 COORDINATOR_PROMPT = "Split a reaseach topic into independent pieces and delegate each piece with the delegate tool. Put all independent delegate calls in the same response. Do not answer from your own knowledge"
@@ -13,7 +15,7 @@ TOOLS = [
             "properties":{
                 "agent":{"type":"string","enum":["search","document"],"description":"use 'search' for general background on AI testing tools and risks, use 'document' for internal fact such as pilot results and costs"},
                 "task":{"type":"string","description":"The search query or the question"},
-                "document":{"type":"string","description":"the file name inside 'docs' folder. Files are available for pilot results and licence costs. This property is required when 'agent' == 'document'"}
+                "document":{"type":"string","description":f"the file name inside 'docs' folder. This property is required when 'agent' == 'document'. Available files: {os.listdir("docs")}"}
             },
             "required":["agent","task"]
         }
@@ -56,34 +58,33 @@ def run_subagent(brief):
     )
     if not response.content:
         return f"Response content is empty. Stop reason {response.stop_reason}"
-    print(f"Subagent response: {response.content[0].text}")
+    # print(f"Subagent response: {response.content[0].text}")
     return response.content[0].text
+
+def run_delegation(args):
+    if args["agent"] == "search":
+        return search_subagent(args["task"])
+    elif args["agent"] == "document":
+        return document_subagent(args["task"], args.get("document"))
 
 def coordinator(messages):
     return client.messages.create(model="code", max_tokens=10000, system=COORDINATOR_PROMPT, tools=TOOLS, messages=messages)
 
 def run_agent(question):
+    iterations = int(0)
     messages=[{"role":"user","content":question}]
     result = coordinator(messages)
     print(f"Iteration {iterations +1}: Number of tool_use requests: {len([item for item in result.content if item.type == "tool_use"])}")
     messages.append({"role":"assistant","content":result.content})
-    iterations = int(0)
     while result.stop_reason == "tool_use" and iterations < MAX_ITERATIONS:
         tool_results = {"role":"user","content":[]}
         for item in result.content:
             if item.type == "tool_use":
-                print("Tool request:", item.id, item.name, item.input)
-                if item.input["agent"] == "search":
+                    print("Tool request:", item.id, item.name, item.input)
                     tool_results["content"].append({
                         "type":"tool_result",
                         "tool_use_id":item.id,
-                        "content":search_subagent(item.input["task"])
-                    })
-                elif item.input["agent"] == "document":
-                    tool_results["content"].append({
-                        "type":"tool_result",
-                        "tool_use_id":item.id,
-                        "content":document_subagent(item.input["task"], item.input.get("document"))
+                        "content":run_delegation(item.input)
                     })
         messages.append(tool_results)
         result = coordinator(messages)
@@ -94,6 +95,27 @@ def run_agent(question):
         return ("Limit of iterations reached. Please try a differnt prompt.")
     return result.content[0].text
 
+print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
+
+JOBS = [
+    {'agent': 'search', 'task': 'How is AI changing software testing? What AI-powered testing tools exist (e.g., test generation, self-healing tests, AI test automation platforms) and what do they do?'},
+    {'agent': 'search', 'task': 'What are the risks and challenges of using AI in software testing (e.g., false confidence, test bias, hallucinated tests, security and data privacy concerns, over-reliance)?'},
+    {'agent': 'document', 'document': 'cost_notes.txt', 'task': 'What are the licence costs for the AI software testing tools under evaluation? Extract any pricing figures, per-seat or per-tool costs.'},
+    {'agent': 'document', 'document': 'testing_report.txt', 'task': 'What were the results of the internal pilot of AI in software testing? Extract all metrics, outcomes, successes and problems reported.'}
+]
+def benchmark():
+    t0 = time.perf_counter()
+    for job in JOBS:
+        run_delegation(job)
+    print(f"Sequential took {time.perf_counter() -t0:.3f} seconds")
+    t1 = time.perf_counter()
+    with ThreadPoolExecutor() as pool:
+        list(pool.map(run_delegation, JOBS))
+    print(f"Thread took {time.perf_counter() -t1:.3f} seconds")
+
+# benchmark()
+# benchmark()
+
 # t0 = time.perf_counter()
 # search_result = search_subagent("AI testing tools and risks")
 # print(f"search_subagent took {time.perf_counter() -t0:.3f} seconds")
@@ -101,5 +123,3 @@ def run_agent(question):
 # print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
 # print(summary_subagent(search_result, document_result))
 # print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
-
-print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
