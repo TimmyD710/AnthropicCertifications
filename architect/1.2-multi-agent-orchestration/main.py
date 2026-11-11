@@ -58,7 +58,6 @@ def run_subagent(brief):
     )
     if not response.content:
         return f"Response content is empty. Stop reason {response.stop_reason}"
-    # print(f"Subagent response: {response.content[0].text}")
     return response.content[0].text
 
 def run_delegation(args):
@@ -78,14 +77,17 @@ def run_agent(question):
     messages.append({"role":"assistant","content":result.content})
     while result.stop_reason == "tool_use" and iterations < MAX_ITERATIONS:
         tool_results = {"role":"user","content":[]}
-        for item in result.content:
-            if item.type == "tool_use":
-                    print("Tool request:", item.id, item.name, item.input)
-                    tool_results["content"].append({
-                        "type":"tool_result",
-                        "tool_use_id":item.id,
-                        "content":run_delegation(item.input)
-                    })
+        blocks = list(i for i in result.content if i.type == "tool_use")
+        with ThreadPoolExecutor() as pool:
+            outputs = list(pool.map(run_delegation, [b.input for b in blocks]))
+            for b, o in zip (blocks, outputs):
+                tool_results["content"].append({
+                    "type":"tool_result",
+                    "tool_use_id":b.id,
+                    "content":o
+                })
+                print("Tool request:", b.id, b.name, b.input)
+                print("Tool output:", o)
         messages.append(tool_results)
         result = coordinator(messages)
         messages.append({"role":"assistant","content":result.content})
@@ -95,7 +97,7 @@ def run_agent(question):
         return ("Limit of iterations reached. Please try a differnt prompt.")
     return result.content[0].text
 
-# print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
+print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
 
 JOBS = [
     {'agent': 'search', 'task': 'How is AI changing software testing? What AI-powered testing tools exist (e.g., test generation, self-healing tests, AI test automation platforms) and what do they do?'},
@@ -113,8 +115,8 @@ def benchmark():
         list(pool.map(run_delegation, JOBS))
     print(f"Thread took {time.perf_counter() -t1:.3f} seconds")
 
-benchmark()
-benchmark()
+# benchmark()
+# benchmark()
 
 # t0 = time.perf_counter()
 # search_result = search_subagent("AI testing tools and risks")
