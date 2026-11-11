@@ -4,6 +4,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 client = anthropic.Anthropic()
+
+USER_PROMPT = "Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."
 MAX_ITERATIONS = 20
 COORDINATOR_PROMPT = "Split a reaseach topic into independent pieces and delegate each piece with the delegate tool. Put all independent delegate calls in the same response. Do not answer from your own knowledge"
 TOOLS = [
@@ -23,7 +25,7 @@ TOOLS = [
 ]
 
 def search_stub(query):
-    facts = {"tools":"AI testing tools generate test cases automatically from code or requirements. Many tools also repair broken tests after the user interface changes. Popular categories include test generation assistants, visual testing tools and self-healing test frameworks.", "risks":"AI-generated tests can look convincing while checking the wrong behaviour. Generated tests are sometimes flaky and need review by a person. Sending source code to external AI services can create data protection and confidentiality concerns."}
+    facts = {"tools":"AI testing tools generate test cases automatically from code or requirements. Many tools also repair broken tests after the user interface changes. Popular categories include test generation assistants, visual testing tools and self-healing test frameworks.", "risks":"AI-generated tests can look convincing while checking the wrong behaviour. Generated tests are sometimes flaky and need review by a person. Sending source code to external AI services can create data protection and confidentiality concerns.","defect": "Industry surveys report that AI-assisted testing tools typically find 10 to 20 percent more defects before release, mainly edge cases that manual test writers miss. Results vary widely and depend on the quality of the existing test suite.", "training": "Teams adopting AI testing tools usually spend two to four weeks on onboarding. Typical extra costs are staff training, integration with existing build pipelines and ongoing review of generated tests."}
     found = []
     for key in facts:
         if key in query.lower():
@@ -97,7 +99,16 @@ def run_agent(question):
         return ("Limit of iterations reached. Please try a differnt prompt.")
     return result.content[0].text
 
-print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
+# print(run_agent(USER_PROMPT))
+
+def check_coverage(report):
+    return run_subagent(f"Check the report created by the assistance against the users prompt. Checklist criterias are tools; risks; pilot results (coverage, time saved, defect detection); costs (licence and training). User Prompt: {USER_PROMPT}. Assistant Report: {report} Your output: list every area the report doesn't cover with concrete facts, one per line, each phrased as a short search question. Only the four listed areas may be reported. Do not add areas of your own. An area counts as covered if the report states at least one concrete fact (a number or a specific finding) about it. Judge each area as covered or not covered, and report only the not-covered ones. If everything is covered, answer exactly: NONE.")
+
+
+report1 = "AI testing tools generate test cases from code and requirements, and many can repair broken tests after the interface changes. Popular categories are test generation assistants, visual testing tools and self-healing frameworks. The main risks are that generated tests can look convincing while checking the wrong behaviour, that some tests are flaky and need human review, and that sending source code to external services can raise confidentiality concerns."
+report2 = "AI testing tools generate test cases from code and requirements, and many repair broken tests automatically. The main risks are plausible but wrong tests, flaky tests that need review, and confidentiality concerns when code leaves the company. In a pilot, automated test coverage rose from 52 to 81 percent, regression test writing time fell from 45 to 12 minutes, and AI-assisted testing found about 15 percent more defects before release. The licence cost 27,360 euros per year, and onboarding and training took about three weeks of staff time."
+print(check_coverage(report1))
+print(check_coverage(report2))
 
 JOBS = [
     {'agent': 'search', 'task': 'How is AI changing software testing? What AI-powered testing tools exist (e.g., test generation, self-healing tests, AI test automation platforms) and what do they do?'},
@@ -117,11 +128,3 @@ def benchmark():
 
 # benchmark()
 # benchmark()
-
-# t0 = time.perf_counter()
-# search_result = search_subagent("AI testing tools and risks")
-# print(f"search_subagent took {time.perf_counter() -t0:.3f} seconds")
-# document_result = document_subagent("What results did the pilot achieve?", "docs/testing_report.txt")
-# print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
-# print(summary_subagent(search_result, document_result))
-# print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")

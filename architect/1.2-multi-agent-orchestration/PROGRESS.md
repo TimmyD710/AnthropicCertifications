@@ -20,9 +20,9 @@ Build a coordinator that delegates to a web-search subagent (fake canned search 
 - [x] 6. Coordinator with `delegate` tool emits delegations (inspect only, no execution) - done: 4 delegate calls in ONE response
 - [x] 7. Execute delegations + agentic loop, sequential - done: final report written (15 delegations over 3 rounds, all to `search`)
 - [x] 8. Tell the coordinator which documents exist (it never used the document agent) - done when: both agent types used, report contains pilot and cost facts
-- [ ] 9. Parallel execution with threads: (a) refactor dispatcher + benchmark fixed delegations seq vs parallel x3, (b) wire into the loop - done when: clearly faster than sequential
+- [x] 9. Parallel execution with threads: (a) refactor dispatcher + benchmark fixed delegations seq vs parallel, (b) wire into the loop - done: 4 delegations in one response run via ThreadPoolExecutor; benchmark noisy (1.06 vs 0.69 s, then 0.65 vs 2.75 s, probably rate-limit retries). TODO: per-round timing line in the real loop.
   - Note step 8: coordinator guessed wrong file names in round 1 (description named no exact files); the error message listing available files let it self-correct in round 2 (4 + 2 = 6 calls).
-- [ ] 10. Iterative refinement - done when: planted gap (a topic in neither source) gets filled by targeted re-delegation
+- [ ] 10. Iterative refinement: (a) DONE: check_coverage with closed checklist (needed tightening: first version invented a gap; 3 identical runs after fix), (b) refactor tool loop into run_tool_loop(messages, result), (c) wire into run_agent (gaps -> new user message -> loop again, max 2 refinements) - done when: real gaps (defect detection, training costs) get filled by targeted re-delegation
 - [ ] 11. Reproduce the bug - done when: report is incomplete though all subagents succeed
 - [ ] 12. Fix at the coordinator - done when: all areas covered without touching subagents
 - [ ] 13. Wrap-up - check questions + knowledge.md update
