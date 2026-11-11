@@ -17,13 +17,15 @@ Build a coordinator that delegates to a web-search subagent (fake canned search 
 - [x] 3. Prove no inherited context - done when: subagent doesn't know an unshared fact, then does once it is in the brief
 - [x] 4. Build the two subagents (fake search + document), test each alone - done when: each answers from its own source
 - [x] 5. Run both sequentially from plain code, synthesise, time it - done when: combined report + measured time (baseline: ~0.45 s search, ~0.14 s doc, ~0.12 s synthesis, total ~0.71 s; runs are noisy)
-- [ ] 6. Coordinator with `delegate` tool emits delegations (inspect only, no execution) - done when: log shows tool_use blocks per response
-- [ ] 7. Execute delegations + agentic loop, sequential, timed - done when: coordinator writes final report
-- [ ] 8. Parallel execution with threads, timed over several runs - done when: clearly faster than step 7
-- [ ] 9. Iterative refinement - done when: planted gap (costs doc) gets filled by targeted re-delegation
-- [ ] 10. Reproduce the bug - done when: report is incomplete though all subagents succeed
-- [ ] 11. Fix at the coordinator - done when: all areas covered without touching subagents
-- [ ] 12. Wrap-up - check questions + knowledge.md update
+- [x] 6. Coordinator with `delegate` tool emits delegations (inspect only, no execution) - done: 4 delegate calls in ONE response
+- [x] 7. Execute delegations + agentic loop, sequential - done: final report written (15 delegations over 3 rounds, all to `search`)
+- [x] 8. Tell the coordinator which documents exist (it never used the document agent) - done when: both agent types used, report contains pilot and cost facts
+- [ ] 9. Parallel execution with threads: (a) refactor dispatcher + benchmark fixed delegations seq vs parallel x3, (b) wire into the loop - done when: clearly faster than sequential
+  - Note step 8: coordinator guessed wrong file names in round 1 (description named no exact files); the error message listing available files let it self-correct in round 2 (4 + 2 = 6 calls).
+- [ ] 10. Iterative refinement - done when: planted gap (a topic in neither source) gets filled by targeted re-delegation
+- [ ] 11. Reproduce the bug - done when: report is incomplete though all subagents succeed
+- [ ] 12. Fix at the coordinator - done when: all areas covered without touching subagents
+- [ ] 13. Wrap-up - check questions + knowledge.md update
 
 ## Notes
 - Working alias: `code` (gateway models are Qwen/Gemma/GPT-OSS-style, no Claude seen; real models unknown, ask admin).

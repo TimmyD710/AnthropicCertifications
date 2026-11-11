@@ -11,9 +11,9 @@ TOOLS = [
         "input_schema":{
             "type":"object",
             "properties":{
-                "agent":{"type":"string","enum":["search","document"]},
+                "agent":{"type":"string","enum":["search","document"],"description":"use 'search' for general background on AI testing tools and risks, use 'document' for internal fact such as pilot results and costs"},
                 "task":{"type":"string","description":"The search query or the question"},
-                "document":{"type":"string","description":"the file name inside docs/"}
+                "document":{"type":"string","description":"the file name inside 'docs' folder. Files are available for pilot results and licence costs. This property is required when 'agent' == 'document'"}
             },
             "required":["agent","task"]
         }
@@ -56,15 +56,8 @@ def run_subagent(brief):
     )
     if not response.content:
         return f"Response content is empty. Stop reason {response.stop_reason}"
+    print(f"Subagent response: {response.content[0].text}")
     return response.content[0].text
-
-# t0 = time.perf_counter()
-# search_result = search_subagent("AI testing tools and risks")
-# print(f"search_subagent took {time.perf_counter() -t0:.3f} seconds")
-# document_result = document_subagent("What results did the pilot achieve?", "docs/testing_report.txt")
-# print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
-# print(summary_subagent(search_result, document_result))
-# print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
 
 def coordinator(messages):
     return client.messages.create(model="code", max_tokens=10000, system=COORDINATOR_PROMPT, tools=TOOLS, messages=messages)
@@ -72,8 +65,7 @@ def coordinator(messages):
 def run_agent(question):
     messages=[{"role":"user","content":question}]
     result = coordinator(messages)
-    print(f"Stop reason: {result.stop_reason}")
-    print(f"Number of tool_use requests: {len([item for item in result.content if item.type == "tool_use"])}")
+    print(f"Iteration {iterations +1}: Number of tool_use requests: {len([item for item in result.content if item.type == "tool_use"])}")
     messages.append({"role":"assistant","content":result.content})
     iterations = int(0)
     while result.stop_reason == "tool_use" and iterations < MAX_ITERATIONS:
@@ -97,10 +89,17 @@ def run_agent(question):
         result = coordinator(messages)
         messages.append({"role":"assistant","content":result.content})
         iterations = iterations + 1
-    print(result.stop_reason)
+    print(f"Stop reason: {result.stop_reason}")
     if result.stop_reason != "end_turn":
         return ("Limit of iterations reached. Please try a differnt prompt.")
     return result.content[0].text
 
+# t0 = time.perf_counter()
+# search_result = search_subagent("AI testing tools and risks")
+# print(f"search_subagent took {time.perf_counter() -t0:.3f} seconds")
+# document_result = document_subagent("What results did the pilot achieve?", "docs/testing_report.txt")
+# print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
+# print(summary_subagent(search_result, document_result))
+# print(f"document_subagent took {time.perf_counter() -t0:.3f} seconds")
 
 print(run_agent("Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."))
