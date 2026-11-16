@@ -1,7 +1,7 @@
 # Exercise: Multi-agent orchestration (coordinator + 2 subagents)
 
 **Concepts / exam domain:** coordinator/subagent pattern, explicit context passing, parallel delegation, iterative refinement, too-narrow task decomposition bug
-**Started:** 2026-11-05   **Status:** in progress
+**Started:** 2026-11-05   **Status:** complete (steps 11 and 12 skipped by choice; revisit before the exam)
 
 ## Goal
 Build a coordinator that delegates to a web-search subagent (fake canned search function) and a document-analysis subagent (local .txt files), runs them in parallel, refines for coverage gaps, then reproduce and fix the narrow-decomposition bug at the coordinator.
@@ -22,10 +22,10 @@ Build a coordinator that delegates to a web-search subagent (fake canned search 
 - [x] 8. Tell the coordinator which documents exist (it never used the document agent) - done when: both agent types used, report contains pilot and cost facts
 - [x] 9. Parallel execution with threads: (a) refactor dispatcher + benchmark fixed delegations seq vs parallel, (b) wire into the loop - done: 4 delegations in one response run via ThreadPoolExecutor; benchmark noisy (1.06 vs 0.69 s, then 0.65 vs 2.75 s, probably rate-limit retries). TODO: per-round timing line in the real loop.
   - Note step 8: coordinator guessed wrong file names in round 1 (description named no exact files); the error message listing available files let it self-correct in round 2 (4 + 2 = 6 calls).
-- [ ] 10. Iterative refinement: (a) DONE: check_coverage with closed checklist (needed tightening: first version invented a gap; 3 identical runs after fix), (b) refactor tool loop into run_tool_loop(messages, result), (c) wire into run_agent (gaps -> new user message -> loop again, max 2 refinements) - done when: real gaps (defect detection, training costs) get filled by targeted re-delegation
-- [ ] 11. Reproduce the bug - done when: report is incomplete though all subagents succeed
-- [ ] 12. Fix at the coordinator - done when: all areas covered without touching subagents
-- [ ] 13. Wrap-up - check questions + knowledge.md update
+- [x] 10. (DONE: gaps filled via search after prompt told coordinator not to re-ask the same document; log showed a checker failure `max_tokens` treated as gaps -> add `ERROR:` marker + check, optional `is_error`) Iterative refinement: (a) DONE: check_coverage with closed checklist (needed tightening: first version invented a gap; 3 identical runs after fix), (b) DONE: refactor tool loop into run_tool_loop(messages, result) (per-round timing added; gateway timing noisy: 5.2 s for 4 parallel delegations once), (c) wire into run_agent (gaps -> new user message -> loop again, max 2 refinements) - done when: real gaps (defect detection, training costs) get filled by targeted re-delegation
+- [~] 11. (SKIPPED by student choice, concept explained but not reproduced) Reproduce the bug - done when: report is incomplete though all subagents succeed
+- [~] 12. (SKIPPED by student choice) Fix at the coordinator - done when: all areas covered without touching subagents
+- [x] 13. Wrap-up - check questions + knowledge.md update
 
 ## Notes
 - Working alias: `code` (gateway models are Qwen/Gemma/GPT-OSS-style, no Claude seen; real models unknown, ask admin).
