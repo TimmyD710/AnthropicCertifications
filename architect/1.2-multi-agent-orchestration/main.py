@@ -7,6 +7,7 @@ client = anthropic.Anthropic()
 
 USER_PROMPT = "Research: how is AI changing software testing? Cover the tools, the risks, the pilot results and the costs."
 MAX_ITERATIONS = 20
+MAX_REFINEMENTS = 2
 COORDINATOR_PROMPT = "Split a reaseach topic into independent pieces and delegate each piece with the delegate tool. Put all independent delegate calls in the same response. Do not answer from your own knowledge"
 TOOLS = [
     {
@@ -59,7 +60,7 @@ def run_subagent(brief):
         messages=[{"role":"user","content":brief}]
     )
     if not response.content:
-        return f"Response content is empty. Stop reason {response.stop_reason}"
+        return f"ERROR: Response content is empty. Stop reason {response.stop_reason}"
     return response.content[0].text
 
 def run_delegation(args):
@@ -72,15 +73,47 @@ def coordinator(messages):
     return client.messages.create(model="code", max_tokens=10000, system=COORDINATOR_PROMPT, tools=TOOLS, messages=messages)
 
 def run_agent(question):
-    iterations = int(0)
     messages=[{"role":"user","content":question}]
     result = coordinator(messages)
-    print(f"Iteration {iterations +1}: Number of tool_use requests: {len([item for item in result.content if item.type == "tool_use"])}")
     messages.append({"role":"assistant","content":result.content})
+    result = run_tool_loop(messages, result)
+    for attempt in range(MAX_REFINEMENTS):
+        if result.stop_reason != "end_turn" or not result.content:
+            break
+        report = result.content[0].text
+        gaps = check_coverage(report)
+        if gaps.startswith("ERROR:"):
+            print(gaps)
+            break
+        print("Coverage check:", gaps)
+        if gaps.strip() == "NONE":
+            break
+        print(f"--- Refinement {attempt +1} ---")
+        messages.append({"role":"user","content":f"The following gaps have been found: {gaps} \n Delegate one targeted query per gap!Then write the complete updated report! If an internal document does not contain the information, do not ask the same document again; ask the search agent for general industry information instead."})
+        result = coordinator(messages)
+        messages.append({"role":"assistant","content":result.content})
+        result = run_tool_loop(messages, result)
+    print(f"Stop reason: {result.stop_reason}")
+    if result.stop_reason != "end_turn":
+        return ("Limit of iterations reached. Please try a differnt prompt.")
+    return result.content[0].text
+
+def check_coverage(report):
+    return run_subagent(
+        f"RULES: Check the report created by the assistance against the users prompt. Checklist criterias are tools; risks; pilot results (coverage, time saved, defect detection); costs (licence and training).\n\n" 
+        f"USER PROMPT: {USER_PROMPT}.\n\n" 
+        f"REPORT: {report}\n\n"
+        "YOUR OUPUT: list every area the report doesn't cover with concrete facts, one per line, each phrased as a short search question. Only the four listed areas may be reported. Do not add areas of your own. An area counts as covered only if the report states at least one concrete fact (a number or a specific finding) for EACH item listed in its parentheses. For pilot results that means coverage, time saved and defect detection. For costs that means licence and training. If any item is missing, the whole area is not covered, and your question should name the missing item. Judge each area as covered or not covered, and report only the not-covered ones. If everything is covered, answer exactly: NONE."
+    )
+
+def run_tool_loop(messages, result):
+    iterations = int(0)
+    print(f"Coordinator reply: Number of tool_use requests: {len([r for r in result.content if r.type == "tool_use"])}")
     while result.stop_reason == "tool_use" and iterations < MAX_ITERATIONS:
         tool_results = {"role":"user","content":[]}
         blocks = list(i for i in result.content if i.type == "tool_use")
         with ThreadPoolExecutor() as pool:
+            t0 = time.perf_counter()
             outputs = list(pool.map(run_delegation, [b.input for b in blocks]))
             for b, o in zip (blocks, outputs):
                 tool_results["content"].append({
@@ -88,27 +121,17 @@ def run_agent(question):
                     "tool_use_id":b.id,
                     "content":o
                 })
-                print("Tool request:", b.id, b.name, b.input)
-                print("Tool output:", o)
+                print("\n-- Tool request --", b.id, b.name, b.input)
+                print("\n-- Tool output --", o)
+            print(f"-- Tool round: {iterations +1} terminated: {len(blocks)} delegations in {time.perf_counter()-t0:.3}s --")
         messages.append(tool_results)
         result = coordinator(messages)
         messages.append({"role":"assistant","content":result.content})
         iterations = iterations + 1
-    print(f"Stop reason: {result.stop_reason}")
-    if result.stop_reason != "end_turn":
-        return ("Limit of iterations reached. Please try a differnt prompt.")
-    return result.content[0].text
+    return result
 
-# print(run_agent(USER_PROMPT))
+print(run_agent(USER_PROMPT))
 
-def check_coverage(report):
-    return run_subagent(f"Check the report created by the assistance against the users prompt. Checklist criterias are tools; risks; pilot results (coverage, time saved, defect detection); costs (licence and training). User Prompt: {USER_PROMPT}. Assistant Report: {report} Your output: list every area the report doesn't cover with concrete facts, one per line, each phrased as a short search question. Only the four listed areas may be reported. Do not add areas of your own. An area counts as covered if the report states at least one concrete fact (a number or a specific finding) about it. Judge each area as covered or not covered, and report only the not-covered ones. If everything is covered, answer exactly: NONE.")
-
-
-report1 = "AI testing tools generate test cases from code and requirements, and many can repair broken tests after the interface changes. Popular categories are test generation assistants, visual testing tools and self-healing frameworks. The main risks are that generated tests can look convincing while checking the wrong behaviour, that some tests are flaky and need human review, and that sending source code to external services can raise confidentiality concerns."
-report2 = "AI testing tools generate test cases from code and requirements, and many repair broken tests automatically. The main risks are plausible but wrong tests, flaky tests that need review, and confidentiality concerns when code leaves the company. In a pilot, automated test coverage rose from 52 to 81 percent, regression test writing time fell from 45 to 12 minutes, and AI-assisted testing found about 15 percent more defects before release. The licence cost 27,360 euros per year, and onboarding and training took about three weeks of staff time."
-print(check_coverage(report1))
-print(check_coverage(report2))
 
 JOBS = [
     {'agent': 'search', 'task': 'How is AI changing software testing? What AI-powered testing tools exist (e.g., test generation, self-healing tests, AI test automation platforms) and what do they do?'},
